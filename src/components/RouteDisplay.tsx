@@ -1,5 +1,5 @@
 import { useAppStore } from '@/store/useAppStore'
-import { Footprints, Eye, Clock, AlertTriangle, ArrowRight, X } from 'lucide-react'
+import { Footprints, Eye, Clock, AlertTriangle, ArrowRight, X, AlertCircle } from 'lucide-react'
 import HallCard from './HallCard'
 
 export default function RouteDisplay() {
@@ -21,8 +21,22 @@ export default function RouteDisplay() {
     )
   }
 
-  const { steps, totalWalkMinutes, totalVisitMinutes, timeSufficient, suggestedRemovals, excludedHalls } = routeResult
+  const { steps, totalWalkMinutes, totalVisitMinutes, timeSufficient, suggestedRemovals, excludedHalls, timeError, impossible, impossibleReason } = routeResult
   const totalWait = steps.reduce((s, st) => s + st.waitMinutes, 0)
+
+  if (timeError) {
+    return (
+      <div className="card-base p-6">
+        <div className="flex items-start gap-3 p-4 rounded-lg bg-red-50 border border-red-200">
+          <AlertCircle size={22} className="text-red-500 shrink-0 mt-0.5" />
+          <div>
+            <h3 className="font-semibold text-red-700 mb-1">时间设置有误</h3>
+            <p className="text-sm text-red-600">{timeError}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -67,14 +81,14 @@ export default function RouteDisplay() {
           </div>
         </div>
 
-        {!timeSufficient && (
+        {!timeSufficient && !impossible && (
           <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
             <div className="flex items-center gap-2 text-amber-700 font-medium text-sm mb-2">
               <AlertTriangle size={16} />
               时间不足
             </div>
             <p className="text-xs text-amber-600 mb-2">
-              在当前可用时间内无法完成所有展厅参观，建议删除以下展厅：
+              在当前可用时间内无法完成所有展厅参观，建议删除以下展厅（按节省时间从多到少）：
             </p>
             <div className="flex flex-wrap gap-1">
               {suggestedRemovals.map(hall => {
@@ -95,13 +109,30 @@ export default function RouteDisplay() {
             </div>
           </div>
         )}
+
+        {impossible && (
+          <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+            <div className="flex items-center gap-2 text-red-700 font-medium text-sm mb-2">
+              <AlertCircle size={16} />
+              时间严重不足
+            </div>
+            <p className="text-xs text-red-600">
+              {impossibleReason || '即使删减所有可选展厅，也无法在闭馆前完成（含已锁定展厅）。'}
+            </p>
+            {lockedHallIds.length > 0 && (
+              <p className="text-xs text-red-500 mt-1">
+                提示：您已锁定 {lockedHallIds.length} 个展厅，可尝试解锁部分以缩短行程。
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="card-base p-6">
         <div className="space-y-0">
           {steps.map((step, i) => (
             <HallCard
-              key={step.hall.id}
+              key={step.hall.id + '-' + i}
               hall={step.hall}
               index={i}
               arrivalTime={step.arrivalTime}

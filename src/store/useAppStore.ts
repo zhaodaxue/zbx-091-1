@@ -48,11 +48,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   setClosingTime: (time) => set({ closingTime: time }),
 
   toggleLock: (hallId) => {
-    const { lockedHallIds } = get()
+    const { lockedHallIds, routeResult } = get()
     const next = lockedHallIds.includes(hallId)
       ? lockedHallIds.filter(id => id !== hallId)
       : [...lockedHallIds, hallId]
     set({ lockedHallIds: next })
+
+    if (routeResult) {
+      const { generateRoute } = get()
+      setTimeout(() => generateRoute(), 0)
+    }
   },
 
   generateRoute: () => {

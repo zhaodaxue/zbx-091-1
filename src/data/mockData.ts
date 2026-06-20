@@ -112,6 +112,7 @@ export const halls: Hall[] = [
 ]
 
 export const walkingEdges: WalkingEdge[] = [
+  { fromId: 'entrance', toId: 'exit', minutes: 4, stairsOnly: false },
   { fromId: 'entrance', toId: 'bronze', minutes: 2, stairsOnly: false },
   { fromId: 'entrance', toId: 'painting', minutes: 3, stairsOnly: false },
   { fromId: 'entrance', toId: 'family', minutes: 5, stairsOnly: false },

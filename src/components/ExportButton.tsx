@@ -1,12 +1,14 @@
 import { useAppStore } from '@/store/useAppStore'
-import { Download } from 'lucide-react'
+import { Download, AlertTriangle } from 'lucide-react'
+import { useState } from 'react'
 
 export default function ExportButton() {
   const { routeResult, currentTime, closingTime, selectedTags } = useAppStore()
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   if (!routeResult) return null
 
-  const handleExport = () => {
+  const buildItineraryText = (): string => {
     const lines: string[] = []
     lines.push('═══════════════════════════════════════')
     lines.push('  市立博物馆 · 参观行程单')
@@ -70,23 +72,64 @@ export default function ExportButton() {
     lines.push('  祝您参观愉快！')
     lines.push('═══════════════════════════════════════')
 
-    const text = lines.join('\n')
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `博物馆行程单_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.txt`
-    a.click()
-    URL.revokeObjectURL(url)
+    return lines.join('\n')
+  }
+
+  const handleExport = () => {
+    setErrorMsg(null)
+
+    try {
+      const text = buildItineraryText()
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+
+      const fileName = `博物馆行程单_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.txt`
+
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName
+      a.style.display = 'none'
+      document.body.appendChild(a)
+
+      a.click()
+
+      setTimeout(() => {
+        try {
+          document.body.removeChild(a)
+          URL.revokeObjectURL(url)
+        } catch (e) {
+          // ignore cleanup errors
+        }
+      }, 100)
+    } catch (err) {
+      console.error('导出失败:', err)
+
+      try {
+        const text = buildItineraryText()
+        const encoded = encodeURIComponent(text)
+        window.open(`data:text/plain;charset=utf-8,${encoded}`, '_blank')
+      } catch (err2) {
+        console.error('备用导出方案也失败:', err2)
+        setErrorMsg('导出失败，请检查浏览器权限设置')
+      }
+    }
   }
 
   return (
-    <button
-      onClick={handleExport}
-      className="w-full py-3 rounded-xl border-2 border-museum-teal text-museum-teal font-medium text-sm hover:bg-museum-teal hover:text-white active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
-    >
-      <Download size={16} />
-      导出为纯文本行程单
-    </button>
+    <div className="space-y-2">
+      <button
+        onClick={handleExport}
+        className="w-full py-3 rounded-xl border-2 border-museum-teal text-museum-teal font-medium text-sm hover:bg-museum-teal hover:text-white active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
+      >
+        <Download size={16} />
+        导出为纯文本行程单
+      </button>
+      {errorMsg && (
+        <div className="flex items-center gap-2 text-xs text-red-600 p-2 rounded bg-red-50 border border-red-200">
+          <AlertTriangle size={14} />
+          {errorMsg}
+        </div>
+      )}
+    </div>
   )
 }

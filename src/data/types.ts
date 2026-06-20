@@ -39,6 +39,10 @@ export interface RouteResult {
   timeSufficient: boolean
   suggestedRemovals: Hall[]
   excludedHalls: Hall[]
+  timeError?: string
+  impossible?: boolean
+  impossibleReason?: string
+  allLockedVisited?: boolean
 }
 
 export interface UserPreferences {
