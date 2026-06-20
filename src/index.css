@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Noto Sans SC', system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: #FAF8F0;
+  color: #2D2D2D;
+}
+
+@layer components {
+  .tag-button {
+    @apply px-4 py-2 rounded-full border-2 text-sm font-medium transition-all duration-200 cursor-pointer select-none;
+  }
+
+  .tag-button-active {
+    @apply border-museum-gold bg-museum-gold/15 text-museum-gold-dark shadow-sm;
+  }
+
+  .tag-button-inactive {
+    @apply border-museum-charcoal-light/30 bg-white text-museum-charcoal-light hover:border-museum-teal-light hover:text-museum-teal;
+  }
+
+  .card-base {
+    @apply bg-white rounded-xl shadow-md border border-museum-ivory-dark/60;
+  }
+
+  .route-step-line {
+    @apply absolute left-6 top-12 bottom-0 w-0.5 bg-museum-teal/20;
+  }
+}
