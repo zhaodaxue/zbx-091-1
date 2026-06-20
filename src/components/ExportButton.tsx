@@ -1,9 +1,10 @@
 import { useAppStore } from '@/store/useAppStore'
 import { Download, AlertTriangle } from 'lucide-react'
 import { useState } from 'react'
+import { getHallById } from '@/data/mockData'
 
 export default function ExportButton() {
-  const { routeResult, currentTime, closingTime, selectedTags } = useAppStore()
+  const { routeResult, currentTime, closingTime, selectedTags, lockedHallIds, skippedHallIds } = useAppStore()
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   if (!routeResult) return null
@@ -19,6 +20,10 @@ export default function ExportButton() {
     lines.push(`闭馆时间：${closingTime}`)
     if (selectedTags.length > 0) {
       lines.push(`参观偏好：${selectedTags.join('、')}`)
+    }
+    if (lockedHallIds.length > 0) {
+      const lockedNames = lockedHallIds.map(id => getHallById(id)?.name || id).join('、')
+      lines.push(`已锁定展厅：${lockedNames}`)
     }
     lines.push('')
     lines.push('───────────────────────────────────────')
@@ -47,6 +52,19 @@ export default function ExportButton() {
       }
     })
 
+    if (skippedHallIds.length > 0) {
+      lines.push('')
+      lines.push('───────────────────────────────────────')
+      lines.push('  本次暂不去展厅')
+      lines.push('───────────────────────────────────────')
+      skippedHallIds.forEach(id => {
+        const hall = getHallById(id)
+        if (hall) {
+          lines.push(`  · ${hall.name}${hall.description ? `（${hall.description}）` : ''}`)
+        }
+      })
+    }
+
     lines.push('')
     lines.push('───────────────────────────────────────')
     lines.push('  时间统计')
@@ -59,12 +77,17 @@ export default function ExportButton() {
     }
     lines.push(`  总计时间：${routeResult.totalWalkMinutes + routeResult.totalVisitMinutes + totalWait} 分钟`)
 
-    if (!routeResult.timeSufficient) {
+    if (!routeResult.timeSufficient && routeResult.suggestedRemovals.length > 0) {
       lines.push('')
       lines.push('  ⚠ 时间不足！建议删除以下展厅：')
       routeResult.suggestedRemovals.forEach(hall => {
         lines.push(`    - ${hall.name}（${hall.stayMinutes} 分钟）`)
       })
+    }
+
+    if (routeResult.impossible) {
+      lines.push('')
+      lines.push(`  ⚠ ${routeResult.impossibleReason || '时间严重不足，无法完成参观'}`)
     }
 
     lines.push('')

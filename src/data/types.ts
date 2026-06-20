@@ -50,9 +50,12 @@ export interface UserPreferences {
   currentTime: string
   closingTime: string
   lockedHallIds: string[]
+  skippedHallIds: string[]
 }
 
 export interface RouteDiff {
   added: Hall[]
   removed: Hall[]
+  addedSkipped: Hall[]
+  removedSkipped: Hall[]
 }

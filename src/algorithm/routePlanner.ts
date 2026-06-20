@@ -28,10 +28,13 @@ function getWaitMinutes(hall: Hall, arrivalMinutes: number): number {
 function filterCandidateHalls(
   selectedTags: PreferenceTag[],
   lockedHallIds: string[],
+  skippedHallIds: string[],
   accessible: boolean
 ): Hall[] {
   const candidates = halls.filter(h => {
     if (h.id === "entrance" || h.id === "exit") return false
+
+    if (skippedHallIds.includes(h.id)) return false
 
     if (lockedHallIds.includes(h.id)) return true
 
@@ -121,6 +124,7 @@ function findNextHall(
 function computeRoute(
   candidateHalls: Hall[],
   lockedHallIds: string[],
+  skippedHallIds: string[],
   accessible: boolean,
   currentTime: string,
   closingTime: string
@@ -257,7 +261,7 @@ function computeRoute(
   const allVisited = candidateHalls.every(h => visitedHallIds.has(h.id))
 
   const suggestedRemovals = candidateHalls
-    .filter(h => !visitedHallIds.has(h.id) && !lockedHallIds.includes(h.id))
+    .filter(h => !visitedHallIds.has(h.id) && !lockedHallIds.includes(h.id) && !skippedHallIds.includes(h.id))
     .sort((a, b) => b.stayMinutes - a.stayMinutes)
 
   const excludedHalls = halls.filter(
@@ -279,11 +283,12 @@ function computeRoute(
 function planRoute(
   selectedTags: PreferenceTag[],
   lockedHallIds: string[],
+  skippedHallIds: string[],
   currentTime: string,
   closingTime: string
 ): RouteResult {
   const accessible = selectedTags.includes("无障碍")
-  const candidateHalls = filterCandidateHalls(selectedTags, lockedHallIds, accessible)
+  const candidateHalls = filterCandidateHalls(selectedTags, lockedHallIds, skippedHallIds, accessible)
   const lockedHalls = candidateHalls.filter(h => lockedHallIds.includes(h.id))
 
   if (candidateHalls.length === 0) {
@@ -320,7 +325,7 @@ function planRoute(
     }
   }
 
-  const result = computeRoute(candidateHalls, lockedHallIds, accessible, currentTime, closingTime)
+  const result = computeRoute(candidateHalls, lockedHallIds, skippedHallIds, accessible, currentTime, closingTime)
 
   if (result.timeError) {
     return result

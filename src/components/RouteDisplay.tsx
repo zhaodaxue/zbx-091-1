@@ -1,9 +1,9 @@
 import { useAppStore } from '@/store/useAppStore'
-import { Footprints, Eye, Clock, AlertTriangle, ArrowRight, X, AlertCircle } from 'lucide-react'
+import { Footprints, Eye, Clock, AlertTriangle, X, AlertCircle, Lock, LockOpen, Ban, RotateCcw } from 'lucide-react'
 import HallCard from './HallCard'
 
 export default function RouteDisplay() {
-  const { routeResult, clearRoute, lockedHallIds } = useAppStore()
+  const { routeResult, clearRoute, lockedHallIds, skippedHallIds, conflictMessage, clearConflict, toggleLock, toggleSkip } = useAppStore()
 
   if (!routeResult) {
     return (
@@ -38,8 +38,28 @@ export default function RouteDisplay() {
     )
   }
 
+  const excludedSkipped = excludedHalls.filter(h => skippedHallIds.includes(h.id))
+  const excludedOthers = excludedHalls.filter(h => !skippedHallIds.includes(h.id))
+
   return (
     <div className="space-y-4">
+      {conflictMessage && (
+        <div className="card-base p-0 overflow-hidden">
+          <div className="flex items-start gap-3 p-4 bg-amber-50 border-b border-amber-200">
+            <AlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm text-amber-800">{conflictMessage}</p>
+            </div>
+            <button
+              onClick={clearConflict}
+              className="shrink-0 p-1 rounded text-amber-600 hover:bg-amber-100 transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="card-base p-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-serif text-lg font-semibold text-museum-teal-dark">
@@ -81,7 +101,7 @@ export default function RouteDisplay() {
           </div>
         </div>
 
-        {!timeSufficient && !impossible && (
+        {!timeSufficient && !impossible && suggestedRemovals.length > 0 && (
           <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
             <div className="flex items-center gap-2 text-amber-700 font-medium text-sm mb-2">
               <AlertTriangle size={16} />
@@ -148,19 +168,78 @@ export default function RouteDisplay() {
 
       {excludedHalls.length > 0 && (
         <div className="card-base p-4">
-          <h3 className="text-sm font-medium text-museum-charcoal-light mb-2">
-            未纳入路线的展厅
-          </h3>
-          <div className="flex flex-wrap gap-1">
-            {excludedHalls.map(hall => (
-              <span
-                key={hall.id}
-                className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500"
-              >
-                {hall.name}
-              </span>
-            ))}
-          </div>
+          {excludedSkipped.length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-sm font-medium text-museum-charcoal-light mb-2">
+                本次暂不去（{excludedSkipped.length}）
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {excludedSkipped.map(hall => (
+                  <div
+                    key={hall.id}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-100 text-gray-700 border border-gray-200"
+                  >
+                    <Ban size={12} className="text-gray-500" />
+                    <span className="text-xs">{hall.name}</span>
+                    <button
+                      onClick={() => toggleSkip(hall.id)}
+                      className="ml-1 p-0.5 rounded hover:bg-gray-200 text-gray-500 transition-colors"
+                      title="取消暂不去"
+                    >
+                      <RotateCcw size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {excludedOthers.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-museum-charcoal-light mb-2">
+                未纳入路线的展厅（{excludedOthers.length}）
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {excludedOthers.map(hall => {
+                  const isLocked = lockedHallIds.includes(hall.id)
+                  const isSkipped = skippedHallIds.includes(hall.id)
+                  return (
+                    <div
+                      key={hall.id}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-lg ${
+                        isLocked
+                          ? 'bg-museum-teal/5 text-museum-teal-dark border border-museum-teal/30'
+                          : 'bg-gray-50 text-gray-600 border border-gray-200'
+                      }`}
+                    >
+                      {isLocked && <Lock size={12} className="text-museum-teal" />}
+                      <span className="text-xs">{hall.name}</span>
+                      {!isSkipped && (
+                        <button
+                          onClick={() => toggleSkip(hall.id)}
+                          className="ml-1 p-0.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors"
+                          title="标记为暂不去"
+                        >
+                          <Ban size={12} />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => toggleLock(hall.id)}
+                        className={`ml-0.5 p-0.5 rounded transition-colors ${
+                          isLocked
+                            ? 'hover:bg-museum-teal/20 text-museum-teal'
+                            : 'hover:bg-gray-200 text-gray-400 hover:text-gray-600'
+                        }`}
+                        title={isLocked ? '解锁' : '锁定'}
+                      >
+                        {isLocked ? <LockOpen size={12} /> : <Lock size={12} />}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
